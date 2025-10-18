@@ -6,6 +6,10 @@ esp32dev compatible need fast one and 8mb memory
 
 esp32 
 
+
+https://github.com/user-attachments/assets/d2777aa9-225e-42d4-9b50-ddfe19c12ba5
+
+
 hub75   led 64x64
 
 INMP441 micro
