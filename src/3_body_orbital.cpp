@@ -7,12 +7,12 @@
 #define NUM_BODIES 3
 #define G 10.0f
 #define dt 0.0016f  //0.0008f
-#define scale 28.0f
-#define maxTrailLength 100 //400
-#define transitionSpeed 0.0005f
-#define baseTransitionSpeed 0.005f
+#define scale 18.0f
+#define maxTrailLength 300 //400
+#define transitionSpeed 0.001f
+#define baseTransitionSpeed 0.004f
  
- 
+ #define SIM_RANGE 6.2f 
  
 
  struct Vec2 {
@@ -41,7 +41,7 @@ Vec2 trails[NUM_BODIES][maxTrailLength];
 int trailSizes[NUM_BODIES] = {0};
 int currentShape = 0;
 int nextShape = 1;
-float transition = 0;
+float transition = 3;
 std::vector<Vec2> shapePos[30];
 std::vector<Vec2> shapeVel[30];
 
@@ -114,29 +114,31 @@ void defineShapes() {
 
  
 void initBodies() {
-  Serial.println("Initializing bodies...");
+  
   bodies.clear();
   if (shapePos[0].size() >= NUM_BODIES && shapeVel[0].size() >= NUM_BODIES) {
     for (int i = 0; i < NUM_BODIES; i++) {
-      Serial.printf("Body %d: pos=(%.2f, %.2f), vel=(%.2f, %.2f)\n", 
-        i, shapePos[0][i].x, shapePos[0][i].y, shapeVel[0][i].x, shapeVel[0][i].y);
+      
       bodies.push_back({ shapePos[0][i], shapeVel[0][i], {0, 0}, 1.0f });
     }
   } else {
-    Serial.println("Error: shapePos[0] or shapeVel[0] not initialized!");
+    
     for (int i = 0; i < NUM_BODIES; i++) {
       bodies.push_back({ {0, 0}, {0, 0}, {0, 0}, 1.0f });
     }
   }
-  Serial.printf("Bodies initialized. Free heap: %d bytes\n", ESP.getFreeHeap());
+  
 }
 
-void updateBodies() {
+void updateBodies2() {
   if (transition < 0.1f) {
     float t = transition / 0.1f;
     for (int i = 0; i < NUM_BODIES; i++) {
       bodies[i].pos = lerpVec(shapePos[currentShape][i], shapePos[nextShape][i], t);
       bodies[i].vel = lerpVec(shapeVel[currentShape][i], shapeVel[nextShape][i], t);
+      // Clamp positions during transition
+      bodies[i].pos.x = constrain(bodies[i].pos.x, -1.6f, 1.6f);
+      bodies[i].pos.y = constrain(bodies[i].pos.y, -1.6f, 1.6f);
     }
   } else {
     for (int i = 0; i < NUM_BODIES; i++) {
@@ -155,79 +157,70 @@ void updateBodies() {
     for (int i = 0; i < NUM_BODIES; i++) {
       bodies[i].vel += bodies[i].acc * dt;
       bodies[i].pos += bodies[i].vel * dt;
+      // Clamp positions to keep bodies on screen
+      bodies[i].pos.x = constrain(bodies[i].pos.x, -1.6f, 1.6f);
+      bodies[i].pos.y = constrain(bodies[i].pos.y, -1.6f, 1.6f);
+       
     }
   }
 }
 
 
 
-
-
-void drawOrbitalTrails2() {
-  dma_display->clearScreen();
-  float t = millis() * 0.002;
-
-  uint8_t colors[3][3] = {
-    {255, 100, 100},
-    {100, 255, 100},
-    {100, 100, 255}
-  };
-
-  for (int i = 0; i < NUM_BODIES; i++) {
-    // Update trail buffer
-    if (trailSizes[i] < maxTrailLength) {
-      trails[i][trailSizes[i]] = bodies[i].pos;
-      trailSizes[i]++;
-    } else {
-      for (int j = 1; j < maxTrailLength; j++) {
-        trails[i][j - 1] = trails[i][j];
+void updateBodies() {
+  if (transition < 0.1f) {
+    float t = transition / 0.1f;
+    for (int i = 0; i < NUM_BODIES; i++) {
+      bodies[i].pos = lerpVec(shapePos[currentShape][i], shapePos[nextShape][i], t);
+      bodies[i].vel = lerpVec(shapeVel[currentShape][i], shapeVel[nextShape][i], t);
+      // Wrap positions during transition
+      while (bodies[i].pos.x < -1.6f) bodies[i].pos.x += SIM_RANGE;
+      while (bodies[i].pos.x > 1.6f) bodies[i].pos.x -= SIM_RANGE;
+      while (bodies[i].pos.y < -1.6f) bodies[i].pos.y += SIM_RANGE;
+      while (bodies[i].pos.y > 1.6f) bodies[i].pos.y -= SIM_RANGE;
+    }
+  } else {
+    for (int i = 0; i < NUM_BODIES; i++) {
+      bodies[i].acc = {0, 0};
+      for (int j = 0; j < NUM_BODIES; j++) {
+        if (i != j) {
+          Vec2 r = bodies[j].pos - bodies[i].pos;
+          // Wrap relative distances for gravitational calculations
+          while (r.x < -1.6f) r.x += SIM_RANGE;
+          while (r.x > 1.6f) r.x -= SIM_RANGE;
+          while (r.y < -1.6f) r.y += SIM_RANGE;
+          while (r.y > 1.6f) r.y -= SIM_RANGE;
+          float d = r.mag();
+          if (d > 0.01f) {
+            float f = G / (d * d);
+            bodies[i].acc += r.normalized() * f;
+          }
+        }
       }
-      trails[i][maxTrailLength - 1] = bodies[i].pos;
     }
-
-    // Draw trail with waveform-modulated position
-    for (int j = 0; j < trailSizes[i]; j++) {
-      float fx = trails[i][j].x * scale + WIDTH / 2;
-      float fy = trails[i][j].y * scale + HEIGHT / 2;
-
-      int x = (int)fx;
-      if (x < 0 || x >= WIDTH) continue;
-
-      // 🎵 Get waveform amplitude at this X
-      float normX = fx / WIDTH;
-      int sampleIndex = (int)(normX * SAMPLES);
-      sampleIndex = constrain(sampleIndex, 0, SAMPLES - 1);
-      float amplitude = (float)samples[sampleIndex] / 32768.0;
-
-      // 🌀 Modulate Y position with waveform
-      float yOffset = amplitude * 6.0f + 2.0f * sin(t + normX * 10.0);
-      int y = (int)(fy + yOffset);
-      if (y < 0 || y >= HEIGHT) continue;
-
-      // 🎨 Modulate color with waveform
-      float glow = 0.8 + 0.2 * fabs(amplitude);
-      float shimmer = 0.5 + 0.5 * sin(t + normX * 12.0);
-      uint8_t r = min(255, (int)(colors[i][0] * glow * shimmer));
-      uint8_t g = min(255, (int)(colors[i][1] * glow * shimmer));
-      uint8_t b = min(255, (int)(colors[i][2] * glow * shimmer));
-
-      dma_display->drawPixelRGB888(x, y, r, g, b);
-    }
-
-    // Draw body with waveform pulse
-    int bx = (int)(bodies[i].pos.x * scale + WIDTH / 2);
-    int by = (int)(bodies[i].pos.y * scale + HEIGHT / 2);
-    if (bx >= 0 && bx < WIDTH && by >= 0 && by < HEIGHT) {
-      float amp = (float)samples[(int)((float)bx / WIDTH * SAMPLES)] / 32768.0;
-      uint8_t pulse = 200 + 55 * fabs(amp);
-      dma_display->drawPixelRGB888(bx, by, pulse, pulse, pulse);
+    for (int i = 0; i < NUM_BODIES; i++) {
+      bodies[i].vel += bodies[i].acc * dt;
+      bodies[i].pos += bodies[i].vel * dt;
+      // Wrap positions to keep bodies in simulation range
+      while (bodies[i].pos.x < -1.6f) {
+        bodies[i].pos.x += SIM_RANGE;
+       
+      }
+      while (bodies[i].pos.x > 1.6f) {
+        bodies[i].pos.x -= SIM_RANGE;
+       
+      }
+      while (bodies[i].pos.y < -1.6f) {
+        bodies[i].pos.y += SIM_RANGE;
+        
+      }
+      while (bodies[i].pos.y > 1.6f) {
+        bodies[i].pos.y -= SIM_RANGE;
+         
+      }
     }
   }
-
-  dma_display->flipDMABuffer();
 }
-
-
 
 void drawOrbitalTrails() {
   dma_display->clearScreen();
@@ -239,6 +232,8 @@ void drawOrbitalTrails() {
     {100, 100, 255}
   };
 
+  bool anyPixelDrawn = false; // Debug flag to check if any pixels are drawn
+
   for (int i = 0; i < NUM_BODIES; i++) {
     // Update trail buffer
     if (trailSizes[i] < maxTrailLength) {
@@ -259,18 +254,18 @@ void drawOrbitalTrails() {
       int x = (int)fx;
       if (x < 0 || x >= WIDTH) continue;
 
-      // 🎵 Get waveform amplitude at this X
+      // Get waveform amplitude at this X
       float normX = fx / WIDTH;
       int sampleIndex = (int)(normX * SAMPLES);
       sampleIndex = constrain(sampleIndex, 0, SAMPLES - 1);
       float amplitude = (float)samples[sampleIndex] / 32768.0;
 
-      // 🌀 Modulate Y position with waveform
-      float yOffset = amplitude * 6.0f + 2.0f * sin(t + normX * 10.0);
+      // Modulate Y position with waveform, further reduced for 64x64
+      float yOffset = amplitude * 2.0f + 0.5f * sin(t + normX * 10.0);
       int y = (int)(fy + yOffset);
       if (y < 0 || y >= HEIGHT) continue;
 
-      // 🎨 Modulate color with waveform
+      // Modulate color with waveform
       float glow = 0.8 + 0.2 * fabs(amplitude);
       float shimmer = 0.5 + 0.5 * sin(t + normX * 12.0);
       uint8_t r = min(255, (int)(colors[i][0] * glow * shimmer));
@@ -278,6 +273,7 @@ void drawOrbitalTrails() {
       uint8_t b = min(255, (int)(colors[i][2] * glow * shimmer));
 
       dma_display->drawPixelRGB888(x, y, r, g, b);
+      anyPixelDrawn = true;
     }
 
     // Draw body with waveform pulse
@@ -287,14 +283,15 @@ void drawOrbitalTrails() {
       float amp = (float)samples[(int)((float)bx / WIDTH * SAMPLES)] / 32768.0;
       uint8_t pulse = 200 + 55 * fabs(amp);
       dma_display->drawPixelRGB888(bx, by, pulse, pulse, pulse);
+      anyPixelDrawn = true;
     }
   }
 
+   
+  
+
   dma_display->flipDMABuffer();
 }
-
-
- 
 
 void body3() {
   updateBodies();
@@ -304,8 +301,7 @@ void body3() {
     transition = 0.0f;
     currentShape = (currentShape + 1) % 30;
     nextShape = (currentShape + 1) % 30;
-    for (int i = 0; i < NUM_BODIES; i++) trailSizes[i] = 0;
-    Serial.printf("Shape transition to %d. Free heap: %d bytes\n", currentShape, ESP.getFreeHeap());
+   for (int i = 0; i < NUM_BODIES; i++) trailSizes[i] = 0;
+    
   }
-  
 }

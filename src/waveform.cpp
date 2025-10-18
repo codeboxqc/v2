@@ -45,12 +45,13 @@ void drawWaveform() {
       uint8_t g = 180 + 75 * fade;
       uint8_t b = 255;
 
-      for (int glow = -1; glow <= 1; glow++) {
+      int glow =0;
+     // for (int glow = -1; glow <= 1; glow++) {
         int yOffset = interpY + glow;
         if (yOffset >= 0 && yOffset < PANEL_RES_Y) {
           float glowFade = 1.0 - fabs(glow) * 0.4;
           dma_display->drawPixelRGB888(x, yOffset, r * glowFade, g * glowFade, b * glowFade);
-        }
+      //  }
       }
     }
 
