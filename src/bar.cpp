@@ -3,7 +3,7 @@
 #include <ArduinoFFT.h>
  
 
-#include <bar.h>
+#include "bar.h"
 
 // HUB75 setup
 #include <ESP32-HUB75-MatrixPanel-I2S-DMA.h>

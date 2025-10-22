@@ -74,7 +74,8 @@ void drawCircularWaveform() {
   int cy = PANEL_RES_Y / 2;
   float baseRadius = min(PANEL_RES_X, PANEL_RES_Y) * 0.3;
 
-  for (int i = 0; i < SAMPLES - 1; i += 1) {
+  // FIX: Change to SAMPLES - 5 to avoid accessing samples[i + 4] out of bounds
+  for (int i = 0; i < SAMPLES - 5; i += 1) {
     float angle1 = TWO_PI * i / SAMPLES;
     float angle2 = TWO_PI * (i + 4) / SAMPLES;
 
@@ -89,25 +90,21 @@ void drawCircularWaveform() {
     int x2 = cx + (int)(radius2 * cos(angle2));
     int y2 = cy + (int)(radius2 * sin(angle2));
 
-
     int glow = 1;
-    // Line thickness and glow
-   //for (int glow = -1; glow <= 0; glow++) {
-      int gx1 = x1 + glow;
-      int gy1 = y1 + glow;
-      int gx2 = x2 + glow;
-      int gy2 = y2 + glow;
+    int gx1 = x1 + glow;
+    int gy1 = y1 + glow;
+    int gx2 = x2 + glow;
+    int gy2 = y2 + glow;
 
-      uint8_t r = 255;
-      uint8_t g = 100 + 100 * fabs(amp1);
-      uint8_t b = 200 + 55 * fabs(amp2);
+    uint8_t r = 255;
+    uint8_t g = 100 + 100 * fabs(amp1);
+    uint8_t b = 200 + 55 * fabs(amp2);
 
-      if (gx1 >= 0 && gx1 < PANEL_RES_X && gy1 >= 0 && gy1 < PANEL_RES_Y)
-        dma_display->drawPixelRGB888(gx1, gy1, r, g, b);
-      if (gx2 >= 0 && gx2 < PANEL_RES_X && gy2 >= 0 && gy2 < PANEL_RES_Y)
-        dma_display->drawPixelRGB888(gx2, gy2, r, g, b);
-   // }
-   }
+    if (gx1 >= 0 && gx1 < PANEL_RES_X && gy1 >= 0 && gy1 < PANEL_RES_Y)
+      dma_display->drawPixelRGB888(gx1, gy1, r, g, b);
+    if (gx2 >= 0 && gx2 < PANEL_RES_X && gy2 >= 0 && gy2 < PANEL_RES_Y)
+      dma_display->drawPixelRGB888(gx2, gy2, r, g, b);
+  }
 
   dma_display->flipDMABuffer();
 }

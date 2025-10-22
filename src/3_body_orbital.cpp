@@ -223,7 +223,7 @@ void updateBodies() {
 }
 
 void drawOrbitalTrails() {
-  dma_display->clearScreen();
+  
   float t = millis() * 0.002;
 
   uint8_t colors[3][3] = {
@@ -294,6 +294,9 @@ void drawOrbitalTrails() {
 }
 
 void body3() {
+
+
+  //dma_display->clearScreen();
   updateBodies();
   drawOrbitalTrails();
   transition += transitionSpeed;

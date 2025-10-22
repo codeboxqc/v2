@@ -1,16 +1,17 @@
 #include <Arduino.h>
 #include <driver/i2s.h>
 #include <ArduinoFFT.h>
- 
+#include <ctime>
+
 #include "bar.h" 
 
 // HUB75 setup
 #include <ESP32-HUB75-MatrixPanel-I2S-DMA.h>
 
 
-
-int visualizerMode = 5;  // 0 = bars, 1 = waveform, 2 = circular waveform
-
+///////////////////////////////////////////////////////////////////
+int visualizerMode = 6;  // 0 = bars, 1 = waveform, 2 = circular waveform
+/////////////////////////////////////////////////////////////////////
 
 
 MatrixPanel_I2S_DMA *dma_display;
@@ -170,21 +171,34 @@ void updateVisualizer() {
 }
 
 
+
+
+//////////////////////////////////////////////////////////
+//testing
 void drawVisualizer() {
+    static int visualizerMode = 0;
+    static time_t lastChange = 0;
 
+    time_t now = time(nullptr);
+    if (difftime(now, lastChange) >= 60.0) { // 60 seconds passed
+        visualizerMode = (visualizerMode + 1) % 10; // cycle 0–9
+        lastChange = now;
+    }
 
-  switch (visualizerMode) {
-    case 0: drawBars(); break;
-    case 1: drawFlameBars(); break;
-    case 2: drawFlameBarsFromBuffer(&flame); break;
-    case 3: drawCircularWaveform(); break;
-    case 4: drawWaveform(); break;
-    case 5: body3(); break;
-     
-  
-  }
+    switch (visualizerMode) {
+        case 0: drawBars(); break;
+        case 1: drawFlameBars(); break;
+        case 2: drawFlameBarsFromBuffer(&flame); break;
+        case 3: drawCircularWaveform(); break;
+        case 4: drawWaveform(); break;
+        case 5: body3(); break;
+        case 6: updateSupercharged(); break;
+        case 7: DRB(); break;
+        case 8: drawCircularWaveformPure(); break;
+        case 9: drawParticles(); break;
+    }
 }
-
+/////////////////////////////////////////////////////////
 
 
 
@@ -224,9 +238,9 @@ void setup() {
   dma_display->setBrightness(128); // Adjust brightness (0-255)
   
   // Test display with a green screen
-  dma_display->fillScreen(dma_display->color565(0, 255, 0));
-  dma_display->flipDMABuffer();
-  delay(1000);
+  //dma_display->fillScreen(dma_display->color565(0, 255, 0));
+  //dma_display->flipDMABuffer();
+  //delay(1000);
   dma_display->clearScreen();
   dma_display->flipDMABuffer();
   Serial.println("Display initialized");
@@ -243,10 +257,12 @@ void setup() {
     peakHold[i] = 0;
   }
 
+   logo();
   
   initFlame(&flame);
   defineShapes(); //called before initBodies
   initBodies();
+   
 //////////////////////////////////////////////
 
 

@@ -47,6 +47,44 @@ struct Flame {
 
 extern Flame flame;
 
+
+
+
+
+// Pure calculation function - no side effects
+// Corrected WaveData structure with y coordinate
+struct WaveData {
+    float amplitude;
+    float normalizedX;
+    int y;  // ADD THIS - the calculated Y position
+    uint8_t r, g, b;
+    float filteredAmplitude;
+};
+
+WaveData calculateWaveData(int x, float time);
+
+
+// Audio filter class
+class AudioFilter {
+private:
+    float value = 0;
+    float alpha = 0.1f;
+public:
+    float process(float input) {
+        value = value * (1 - alpha) + input * alpha;
+        return value;
+    }
+    void setSmoothness(float smoothness) { 
+        alpha = constrain(smoothness, 0.01f, 0.3f); 
+    }
+};
+
+// ADD THIS EXTERN DECLARATION:
+extern AudioFilter amplitudeFilter;
+
+
+
+
  
 void drawBars();
 void drawFlameBars();
@@ -69,3 +107,21 @@ void drawOrbitalTrails();
 void body3();
 void initBodies();
 void defineShapes();
+
+
+void updateSupercharged();
+void updateSuperchargedAudio();
+
+
+void logo();
+
+void DRB();
+void drawParticles();
+void drawCircularWaveformPure();
+void drawLine(int x1, int y1, int x2, int y2, 
+             uint8_t r1, uint8_t g1, uint8_t b1,
+             uint8_t r2, uint8_t g2, uint8_t b2);
+ 
+ 
+
+
