@@ -10,7 +10,7 @@
 
 
 ///////////////////////////////////////////////////////////////////
-int visualizerMode = 6;  // 0 = bars, 1 = waveform, 2 = circular waveform
+int visualizerMode = 0;  // 0 = bars, 1 = waveform, 2 = circular waveform
 /////////////////////////////////////////////////////////////////////
 
 
@@ -179,49 +179,62 @@ void updateVisualizer() {
 void drawVisualizer() {
     static int visualizerMode = 0;
     static time_t lastChange = 0;
-    static int secondsPassed = 60; // default duration per mode
+    static int secondsPassed = 60; // default time per mode
 
     time_t now = time(nullptr);
 
-    // timing configuration for each mode (0–15)
+    // Duration in seconds for each visualizer mode (0–19)
     static const int modeDurations[] = {
-        60, 60, 60, 60, 60,    // 0–4: 1 minute
-        300, 300,              // 5–6: 5 minutes
-        60, 60, 60,            // 7–9: 1 minute
-        300, 300, 300, 300,    // 10–13: 5 minutes
-        300, 300, 300          // 14–16: 5 minutes
+        60, 60, 60, 60, 60,      // 0–4: 1 minute
+        300, 300,                // 5–6: 5 minutes
+        60, 60, 60,              // 7–9: 1 minute
+        300, 300, 300, 300,      // 10–13: 5 minutes
+        300, 300, 300,           // 14–16: 5 minutes
+        60, 60, 60               // 17–19: 1 minute
     };
-    static const int numModes = sizeof(modeDurations) / sizeof(modeDurations[0]);
+    static const int numModes = sizeof(modeDurations) / sizeof(modeDurations[0]); // should be 20
 
-    // change mode when enough time passes
+    // Check if it's time to switch modes
     if (difftime(now, lastChange) >= secondsPassed) {
         visualizerMode = (visualizerMode + 1) % numModes;
         secondsPassed = modeDurations[visualizerMode];
         lastChange = now;
+        //Serial.printf("[Visualizer] Switched to mode %d (duration %d sec)\n",       visualizerMode, secondsPassed);
     }
 
-    // --- REMOVE THIS if you want it to auto-cycle ---
-     // visualizerMode = 7;
-      // ---
+    // Uncomment this to test a specific mode manually:
+    // visualizerMode = 19;  // Force mode 19  
 
-    // draw depending on mode
+    // --- Draw visualizer based on mode ---
     switch (visualizerMode) {
-        case 0: drawBars(); break;
-        case 1: drawFlameBars(); break;
-        case 2: drawFlameBarsFromBuffer(&flame); break;
-        case 3: drawCircularWaveform(); break;
-        case 4: drawWaveform(); break;
-        case 5: body3(random(0, 30)); break;
-        case 6: updateSupercharged(random(0, 26)); break;
-        case 7: DRB(); break;
-        case 8: drawCircularWaveformPure(); break;
-        case 9: drawParticles(); break;
-        case 10: case 11: case 12: case 13:
+        case 0:  drawBars(); break;
+        case 1:  drawFlameBars(); break;
+        case 2:  drawFlameBarsFromBuffer(&flame); break;
+        case 3:  drawCircularWaveform(); break;
+        case 4:  drawWaveform(); break;
+        case 5:  body3(random(0, 30)); break;
+        case 6:  updateSupercharged(random(0, 26)); break;
+        case 7:  DRB(); break;
+        case 8:  drawCircularWaveformPure(); break;
+        case 9:  drawParticles(); break;
+
+        case 10:
+        case 11:
+        case 12:
+        case 13:
             body3(random(0, 30)); break;
-        case 14: case 15: case 16:
+
+        case 14:
+        case 15:
+        case 16:
             updateSupercharged(random(0, 26)); break;
+
+        case 17: drawCircularWaveform2(); break;
+        case 18: drawWaveform2(); break;
+        case 19: drawBarsArt(); break; // ✅   active
     }
 }
+
 
 
 //////////////////////////////////////////////////////////

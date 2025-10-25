@@ -97,6 +97,7 @@ void drawFlameBarsFromBuffer(Flame* f) ;
 
 void drawCircularWaveform();
 void drawWaveform();
+void drawWaveform2();
 
 
 
@@ -114,7 +115,7 @@ void updateSupercharged();
 
 
 void logo();
-
+void drawCircularWaveform2();
 void DRB();
 void drawParticles();
 void drawCircularWaveformPure();
@@ -125,3 +126,4 @@ void drawLine(int x1, int y1, int x2, int y2,
  
 
 
+void drawBarsArt();

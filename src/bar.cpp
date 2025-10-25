@@ -1,7 +1,8 @@
 #include <Arduino.h>
 #include <driver/i2s.h>
 #include <ArduinoFFT.h>
- 
+#include <algorithm> // for std::max
+#include <cmath>     // for sin, fmax
 
 #include "bar.h"
 
@@ -101,6 +102,102 @@ void drawBars() {
 
 
 
+ void drawBarsArt() {
+  dma_display->clearScreen();
+
+  int barWidth = PANEL_RES_X / nBands;
+  int spacing = 1;
+  float t = millis() * 0.0015f;  // animation time
+
+  // --- Find peak band ---
+  int peakBand = 0;
+  double maxHeight = 0;
+  for (int i = 0; i < nBands; i++) {
+    if (barHeight[i] > maxHeight) {
+      maxHeight = barHeight[i];
+      peakBand = i;
+    }
+  }
+
+  // --- Draw bars ---
+  for (int band = 0; band < nBands; band++) {
+    int x = band * barWidth;
+    float h = barHeight[band];
+
+    // --- Smooth bar motion ---
+    static float smoothHeight[128];
+    smoothHeight[band] += (h - smoothHeight[band]) * 0.25f; // easing
+    int height = (int)smoothHeight[band];
+
+    // --- Peak hold logic ---
+    if (height > peakHold[band])
+      peakHold[band] = height;
+    else
+      peakHold[band] = std::max(peakHold[band] - 0.3, 0.0);
+
+    // --- Dynamic glow + hue motion ---
+    float hue = ((float)band / nBands) + 0.1f * sin(t + band * 0.2f);
+    float saturation = 0.9f;
+    float baseValue = 1.0f;
+    float pulse = 0.5f + 0.5f * sin(t * 3.0f + band * 0.8f);
+
+    for (int y = 0; y < height; y++) {
+      float value = baseValue * (0.3f + 0.7f * (float)y / PANEL_RES_Y);
+      if (band == peakBand) value = 1.0f; // bright peak
+
+      uint16_t color = hsvToRgb(
+        fmod(hue + 0.1f * sin(y * 0.05f + t * 2.0f), 1.0f),
+        saturation,
+        value * (0.8f + 0.2f * pulse)
+      );
+
+      int drawY = PANEL_RES_Y - 1 - y;
+      for (int barX = x + spacing; barX < x + barWidth - spacing; barX++) {
+        if (barX >= 0 && barX < PANEL_RES_X && drawY >= 0)
+          dma_display->drawPixel(barX + 1, drawY, color);
+      }
+    }
+
+    // --- Peak cap with shimmer ---
+    int peakY = PANEL_RES_Y - 1 - (int)peakHold[band];
+    if (peakY >= 0 && peakY < PANEL_RES_Y) {
+      float flicker = 0.7f + 0.3f * sin(t * 10.0f + band);
+      uint16_t capColor = dma_display->color565(
+        (uint8_t)(255 * flicker),
+        (uint8_t)(180 + 50 * flicker),
+        (uint8_t)(80 + 40 * flicker)
+      );
+
+      for (int barX = x + spacing; barX < x + barWidth - spacing; barX++) {
+        dma_display->drawPixel(barX + 1, peakY, capColor);
+      }
+    }
+
+    // --- Optional glow halo above peak ---
+    int glowY = peakY - 1;
+    if (glowY >= 0 && glowY < PANEL_RES_Y) {
+      uint16_t glowColor = dma_display->color565(255, 200, 150);
+      for (int barX = x + spacing; barX < x + barWidth - spacing; barX++) {
+        dma_display->drawPixel(barX + 1, glowY, glowColor);
+      }
+    }
+  }
+
+  // --- Optional animated bottom line ---
+  for (int x = 0; x < PANEL_RES_X; x++) {
+    float glow = 0.5f + 0.5f * sin(t * 4.0f + x * 0.1f);
+    uint16_t baseLine = dma_display->color565(
+      (uint8_t)(100 + 80 * glow),
+      (uint8_t)(40 + 40 * glow),
+      (uint8_t)(60 + 80 * glow)
+    );
+    dma_display->drawPixel(x, PANEL_RES_Y - 1, baseLine);
+  }
+
+  dma_display->flipDMABuffer();
+}
+
+
 
 
 
@@ -168,7 +265,7 @@ void drawBars() {
     }
   }
 
-  dma_display->drawRect(0, 0, PANEL_RES_X, PANEL_RES_Y, dma_display->color565(255, 80, 0));
+  dma_display->drawRect(0, 0, PANEL_RES_X, PANEL_RES_Y, dma_display->color565(random(0,255), random(0,255), random(0,255)));
   dma_display->flipDMABuffer();
 }
 
