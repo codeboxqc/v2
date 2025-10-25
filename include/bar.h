@@ -104,13 +104,13 @@ void initBodies();
 void updateBodies();
 void drawOrbitalTrails();
 
-void body3();
+void body3(int trans);
 void initBodies();
 void defineShapes();
 
-
+void updateSupercharged(int charge);
 void updateSupercharged();
-void updateSuperchargedAudio();
+//void updateSuperchargedAudio();
 
 
 void logo();

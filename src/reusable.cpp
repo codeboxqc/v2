@@ -38,6 +38,11 @@ static const int numPalettes = sizeof(colorPalettes) / sizeof(ColorPalette);
 // Corrected calculateWaveData function using your existing ColorPalette
 WaveData calculateWaveData(int x, float time) {
     WaveData data;
+
+
+
+
+
     
     // Convert screen position to sample index
     data.normalizedX = (float)x / WIDTH;
@@ -47,9 +52,14 @@ WaveData calculateWaveData(int x, float time) {
     // Get raw amplitude
     float rawAmplitude = (float)samples[sampleIndex] / 32768.0f;
     data.amplitude = rawAmplitude;
+
+ 
+    // Use envelope smoothing, then apply a minimum value
+    float filtered = amplitudeFilter.process(fabs(rawAmplitude));
+    data.filteredAmplitude = max(filtered, 0.05f);  // never z
     
     // Apply smoothing for less reactive visuals
-    data.filteredAmplitude = amplitudeFilter.process(fabs(rawAmplitude));
+    //data.filteredAmplitude = amplitudeFilter.process(fabs(rawAmplitude));
     
     // ADD THIS: Calculate Y position for waveform
     float waveformScale = 0.1f;
@@ -60,8 +70,12 @@ WaveData calculateWaveData(int x, float time) {
     // Use your existing color palettes
     int paletteIndex = ((int)(time * 10) + x) % numPalettes;
     ColorPalette palette = colorPalettes[paletteIndex];
+
+    float colorIntensity = 0.5f + data.filteredAmplitude * 0.9f; // stronger base brightness
+    colorIntensity = min(colorIntensity, 1.0f);
+
     
-    float colorIntensity = 0.3f + data.filteredAmplitude * 0.7f;
+    //float colorIntensity = 0.3f + data.filteredAmplitude * 0.7f;
     int colorIndex = (x + (int)(time * 20)) % 5;
     
     uint16_t baseColor = palette.colors[colorIndex];
@@ -82,27 +96,7 @@ WaveData calculateWaveData(int x, float time) {
 
 
 
-WaveData calculateWaveData2(int x, float time) {
-    WaveData data;
-    data.normalizedX = (float)x / PANEL_RES_X;
-    int sampleIndex = (int)(data.normalizedX * SAMPLES);
-    sampleIndex = constrain(sampleIndex, 0, SAMPLES - 1);
-
-    data.amplitude = (float)samples[sampleIndex] / 32768.0;
-    
-    float waveformScale = 0.1;
-    float shimmer = 0.05;
-    float waveY = 0.5 + waveformScale * data.amplitude + shimmer * sin(time + data.normalizedX * 10.0);
-
-    data.y = (int)((1.0 - waveY) * PANEL_RES_Y);
-    
-    // Calculate color based on amplitude
-    data.r = 80 + 100 * fabs(data.amplitude);
-    data.g = 180 + 75 * fabs(data.amplitude);
-    data.b = 255;
-    
-    return data;
-}
+ 
 
  
 
@@ -115,12 +109,18 @@ void DRB() {
         WaveData data = calculateWaveData(x, t);
         
         // Draw vertical bars instead of waveform
-        int barHeight = (int)(data.amplitude * PANEL_RES_Y * 0.2);
+       // int barHeight = (int)(data.amplitude * PANEL_RES_Y * 0.2);
+        int barHeight = max(2, (int)(fabs(data.amplitude) * PANEL_RES_Y * 0.2f));
+     
+
+
         int barY = PANEL_RES_Y / 2 - barHeight / 2;
         
         for (int y = barY; y < barY + barHeight; y++) {
             if (y >= 0 && y < PANEL_RES_Y) {
-                float brightness = (float)(y - barY) / barHeight;
+               // float brightness = (float)(y - barY) / barHeight;
+                float brightness = 0.6f + 0.4f * ((float)(y - barY) / barHeight);
+
                 dma_display->drawPixelRGB888(x, y, 
                     data.r * brightness, 
                     data.g * brightness, 

@@ -27,7 +27,7 @@ void drawWaveform() {
     
     //float waveY = 0.5 + 0.2 * amplitude + 0.05 * sin(t + normX * 10.0);   
 
-    float waveformScale = 0.1; // try 0.1 to 0.3
+    float waveformScale = 0.3; // try 0.1 to 0.3
     float shimmer = 0.05;
     float waveY = 0.5 + waveformScale * amplitude + shimmer * sin(t + normX * 10.0);
 

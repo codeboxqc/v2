@@ -596,7 +596,7 @@ void drawCurve(int curveType, float alpha) {
 
  
 // Main animation update
-void updateSupercharged() {
+void updateSupercharged(int charge) {
     unsigned long currentTime = millis();
     
     // Clear buffer

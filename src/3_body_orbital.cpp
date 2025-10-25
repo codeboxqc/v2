@@ -8,11 +8,11 @@
 #define G 10.0f
 #define dt 0.0016f  //0.0008f
 #define scale 18.0f
-#define maxTrailLength 300 //400
+#define maxTrailLength 500 //400
 #define transitionSpeed 0.001f
 #define baseTransitionSpeed 0.004f
  
- #define SIM_RANGE 6.2f 
+ #define SIM_RANGE 5.2f  //6.2
  
 
  struct Vec2 {
@@ -293,10 +293,14 @@ void drawOrbitalTrails() {
   dma_display->flipDMABuffer();
 }
 
-void body3() {
+void body3(int trans) {
 
 
-  //dma_display->clearScreen();
+  currentShape=trans;
+
+ dma_display->clearScreen();
+
+
   updateBodies();
   drawOrbitalTrails();
   transition += transitionSpeed;
