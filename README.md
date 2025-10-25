@@ -10,6 +10,12 @@ hub75   led 64x64
 
 INMP441 micro
 
+
+https://github.com/user-attachments/assets/db89ed13-448e-4c0c-947d-a22784fde650
+
+
+
+
 🔧 Features
 ⚛️ Physics-based 3-body simulation with gravitational interactions
 
@@ -72,4 +78,5 @@ Freenove ESP32-S3 ESP32 S3 Wireless Board, Dual-core 32-bit 240 MHz Microcontrol
 
 
 https://buymeacoffee.com/www.nutz.club
+
 
