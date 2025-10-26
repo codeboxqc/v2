@@ -124,6 +124,17 @@ void drawLine(int x1, int y1, int x2, int y2,
              uint8_t r2, uint8_t g2, uint8_t b2);
  
  
-
+ float fastSin(float x);
+ float fastCos(float x);
 
 void drawBarsArt();
+
+void Quantum( );
+void Hyperdimensional( ) ;
+void QuantumPlasmaReactive();
+void QuantumPlasmaReactive2() ;
+void Inferno();
+void PyroVortex( );
+void PyroVortex2() ;
+void NeonRainDance(int charge);
+void Kaleidoscope(int trans);

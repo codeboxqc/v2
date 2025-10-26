@@ -190,7 +190,8 @@ void drawVisualizer() {
         60, 60, 60,              // 7–9: 1 minute
         300, 300, 300, 300,      // 10–13: 5 minutes
         300, 300, 300,           // 14–16: 5 minutes
-        60, 60, 60               // 17–19: 1 minute
+        60, 60, 60 ,              // 17–19: 1 minute
+         60, 60, 60 , 60, 60, 60 , 60, 60, 60 //20 28
     };
     static const int numModes = sizeof(modeDurations) / sizeof(modeDurations[0]); // should be 20
 
@@ -203,7 +204,7 @@ void drawVisualizer() {
     }
 
     // Uncomment this to test a specific mode manually:
-    // visualizerMode = 19;  // Force mode 19  
+     // visualizerMode = 28;  // Force mode 19  
 
     // --- Draw visualizer based on mode ---
     switch (visualizerMode) {
@@ -231,76 +232,22 @@ void drawVisualizer() {
 
         case 17: drawCircularWaveform2(); break;
         case 18: drawWaveform2(); break;
-        case 19: drawBarsArt(); break; // ✅   active
+        case 19: drawBarsArt(); break;  
+
+        case 20: Quantum( ); break; 
+        case 21: Hyperdimensional( ) ; break; 
+        case 22: QuantumPlasmaReactive(); break; 
+        case 23: QuantumPlasmaReactive2(); break; 
+        case 24: Inferno(); break; 
+        case 25: PyroVortex( ); break; 
+        case 26: PyroVortex( ); break; 
+        case 27: NeonRainDance(random(0, 2)); break; 
+        case 28: Kaleidoscope(random(0, 10)) ;break; 
     }
 }
 
 
-
-//////////////////////////////////////////////////////////
-//testing
-/*
-void drawVisualizer() {
-    static int visualizerMode = 0;
-    static time_t lastChange = 0;
-
-    time_t now = time(nullptr);
-
-
-   
-    if (difftime(now, lastChange) >= secondspassed) { // 60 seconds passed
-        visualizerMode = (visualizerMode + 1) % 10; // cycle 0–9
-        switch (visualizerMode) {
-        case 0: secondspassed=60; break;
-        case 1: secondspassed=60; break;
-        case 2: secondspassed=60; break;
-        case 3: secondspassed=60; break;
-        case 4: secondspassed=60; break;
-
-        case 10: case 11:case 12: case 13: case 14: case 15:
-        case 5:  
-        case 6: secondspassed=60*5; break;
-
-        case 7: secondspassed=60; break;
-        case 8: secondspassed=60; break;
-        case 9: secondspassed=60; break;
-    }
-        lastChange = now;
-    }
-
-    //....................
-    visualizerMode = 5;
-    //.....................
-
-    switch (visualizerMode) {
-        case 0: drawBars(); break;
-        case 1: drawFlameBars(); break;
-        case 2: drawFlameBarsFromBuffer(&flame); break;
-        case 3: drawCircularWaveform(); break;
-        case 4: drawWaveform(); break;
-        case 5: body3(random(0,30)); break;
-        case 6: updateSupercharged(random(0,26)); break;
-        case 7: DRB(); break;
-        case 8: drawCircularWaveformPure(); break;
-        case 9: drawParticles(); break;
-
-        case 10: 
-        case 11: 
-        case 12: 
-        case 13: 
-                body3(random(0,30)); break;
-        case 14: 
-        case 15:
-        case 16:
-                
-        updateSupercharged(random(0,26)); break;
-
-
-    }
-}
-    */
-/////////////////////////////////////////////////////////
-
+ 
 
 
 /// ///////////////////////////////////

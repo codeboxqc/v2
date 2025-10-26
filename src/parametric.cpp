@@ -1,5 +1,6 @@
 #include <Arduino.h>
-#include <math.h>
+#include <cmath>
+#include <algorithm>
 #include <string.h>
 #include <ESP32-HUB75-MatrixPanel-I2S-DMA.h>
  
@@ -63,7 +64,7 @@ static const int numPalettes = sizeof(colorPalettes) / sizeof(ColorPalette);
 }
 
 
-static float fastCos(float x) {
+ float fastCos(float x) {
     return fastSin(x + PI/2);
 }
 
@@ -633,4 +634,464 @@ void updateSupercharged(int charge) {
     // Update animation time
     t += animationSpeed;
     if (t > 1000.0f) t = 0.0f;
+}
+
+
+
+
+
+// ============================================================================
+// FUNCTION 1: Quantum Field Visualization with Audio Morphing
+// ============================================================================
+void Quantum() {
+ 
+    static float t = 0.0f;
+    static float hueShift = 0.0f;
+
+   // dma_display->clearScreen();
+
+    // --- 1. Compute smoothed energy (overall + bass emphasis) ---
+    float globalEnergy = 0.0f;
+    float bassEnergy = 0.0f;
+
+    for (int i = 0; i < SAMPLES; i += 4) {
+        float s = fabs((float)samples[i]) / 32768.0f;
+        globalEnergy += s;
+        if (i < SAMPLES / 8) bassEnergy += s;  // low frequencies
+    }
+
+    globalEnergy /= (SAMPLES / 4);
+    bassEnergy /= (SAMPLES / 8);
+
+    static float smoothGlobal = 0.0f, smoothBass = 0.0f;
+    smoothGlobal = 0.85f * smoothGlobal + 0.15f * globalEnergy;
+    smoothBass = 0.85f * smoothBass + 0.15f * bassEnergy;
+
+    // --- 2. Animate based on sound energy ---
+    hueShift += 1.5f + smoothGlobal * 50.0f;          // faster hue spin with sound
+    float waveSpeed = 1.0f + smoothBass * 3.0f;       // faster wave animation on bass
+    float fieldIntensity = 0.8f + smoothGlobal * 1.5f; // stronger field amplitude on peaks
+
+    // --- 3. Precompute sin/cos across X for efficiency ---
+    float sinTable[WIDTH];
+    float cosTable[WIDTH];
+    for (int x = 0; x < WIDTH; x++) {
+        float v = (x - WIDTH / 2) * 0.12f;
+        sinTable[x] = sinf(v + t * waveSpeed);
+        cosTable[x] = cosf(v - t * 0.8f * waveSpeed);
+    }
+
+    // --- 4. Draw field pattern ---
+    for (int y = 0; y < HEIGHT; y++) {
+        float ny = (y - HEIGHT / 2) * 0.12f;
+        float sinY = sinf(ny + t * 0.8f * waveSpeed);
+        float cosY = cosf(ny - t * 1.1f * waveSpeed);
+
+        for (int x = 0; x < WIDTH; x++) {
+            float field = (sinTable[x] * cosY + cosTable[x] * sinY) * fieldIntensity;
+            field = (field + 1.0f) * 0.5f; // normalize 0..1
+
+            // --- Audio-reactive brightness ---
+            float brightness = field * (0.5f + smoothGlobal * 1.0f);
+
+            // --- Audio-reactive hue shift ---
+            float hue = fmod(hueShift + field * 240.0f + smoothBass * 120.0f, 360.0f);
+
+            // --- Simplified HSV→RGB ---
+            uint8_t r, g, b;
+            if (hue < 120) {
+                r = (uint8_t)(255 * (1.0f - hue / 120.0f));
+                g = (uint8_t)(255 * (hue / 120.0f));
+                b = 0;
+            } else if (hue < 240) {
+                hue -= 120;
+                r = 0;
+                g = (uint8_t)(255 * (1.0f - hue / 120.0f));
+                b = (uint8_t)(255 * (hue / 120.0f));
+            } else {
+                hue -= 240;
+                r = (uint8_t)(255 * (hue / 120.0f));
+                g = 0;
+                b = (uint8_t)(255 * (1.0f - hue / 120.0f));
+            }
+
+            r = (uint8_t)(r * brightness);
+            g = (uint8_t)(g * brightness);
+            b = (uint8_t)(b * brightness);
+
+            dma_display->drawPixelRGB888(x, y, r, g, b);
+        }
+    }
+
+    t += 0.05f * waveSpeed;
+    dma_display->flipDMABuffer();
+ 
+}
+
+
+void QuantumPlasmaReactive() {
+    static float t = 0.0f;
+    static float hueShift = 0.0f;
+
+   // dma_display->clearScreen();
+
+    // --- 1. Audio energy analysis ---
+    float bassEnergy = 0.0f;
+    float midEnergy = 0.0f;
+    float highEnergy = 0.0f;
+
+    int third = SAMPLES / 3;
+    for (int i = 0; i < third; i++) bassEnergy += fabs((float)samples[i] / 32768.0f);
+    for (int i = third; i < 2 * third; i++) midEnergy += fabs((float)samples[i] / 32768.0f);
+    for (int i = 2 * third; i < SAMPLES; i++) highEnergy += fabs((float)samples[i] / 32768.0f);
+
+    bassEnergy /= third;
+    midEnergy /= third;
+    highEnergy /= third;
+
+    static float smoothBass = 0, smoothMid = 0, smoothHigh = 0;
+    smoothBass = 0.8f * smoothBass + 0.2f * bassEnergy;
+    smoothMid = 0.85f * smoothMid + 0.15f * midEnergy;
+    smoothHigh = 0.9f * smoothHigh + 0.1f * highEnergy;
+
+    // --- 2. Global animation parameters ---
+    hueShift += 0.8f + smoothHigh * 25.0f;
+    float plasmaSpeed = 0.5f + smoothBass * 3.0f;
+    float intensity = 0.7f + (smoothBass + smoothMid) * 1.3f;
+
+    // --- 3. Fast plasma field ---
+    for (int y = 0; y < HEIGHT; y++) {
+        float fy = (y - HEIGHT / 2) * 0.15f;
+        for (int x = 0; x < WIDTH; x++) {
+            float fx = (x - WIDTH / 2) * 0.15f;
+
+            float v = 0.0f;
+            v += sinf(fx * 3.1f + t * plasmaSpeed);
+            v += sinf((fy + t * 0.7f) * 4.3f);
+            v += sinf((fx + fy) * 2.5f - t * 1.3f);
+            v += cosf(sqrtf(fx * fx + fy * fy) * 4.0f - t * plasmaSpeed * 1.2f);
+
+            // local reaction — pixel flicker by amplitude in this zone
+            int idx = ((x + y * WIDTH) % SAMPLES);
+            float localAmp = fabs((float)samples[idx]) / 32768.0f;
+            v += localAmp * 3.0f;
+
+            v *= intensity;
+
+            // Normalize field 0..1
+            float field = (v + 4.0f) / 8.0f;
+            field = constrain(field, 0.0f, 1.0f);
+
+            // --- 4. Fire/Ice color mix ---
+            float fireHue = 30.0f + field * 60.0f;   // orange/yellow
+            float iceHue = 200.0f + field * 80.0f;   // cyan/blue
+            float mix = smoothMid * 1.5f;            // mid frequencies switch color temperature
+            mix = constrain(mix, 0.0f, 1.0f);
+            float hue = fireHue * (1.0f - mix) + iceHue * mix;
+
+            float sat = 0.8f + smoothHigh * 0.3f;
+            float val = field * (0.6f + smoothBass * 0.8f);
+
+            // HSV → RGB (fast inline)
+            float c = val * sat;
+            float h = fmodf(hue, 360.0f) / 60.0f;
+            float x_val = c * (1.0f - fabsf(fmodf(h, 2.0f) - 1.0f));
+            float m = val - c;
+
+            float r, g, b;
+            if (h < 1) { r = c; g = x_val; b = 0; }
+            else if (h < 2) { r = x_val; g = c; b = 0; }
+            else if (h < 3) { r = 0; g = c; b = x_val; }
+            else if (h < 4) { r = 0; g = x_val; b = c; }
+            else if (h < 5) { r = x_val; g = 0; b = c; }
+            else { r = c; g = 0; b = x_val; }
+
+            uint8_t R = (uint8_t)((r + m) * 255);
+            uint8_t G = (uint8_t)((g + m) * 255);
+            uint8_t B = (uint8_t)((b + m) * 255);
+
+            dma_display->drawPixelRGB888(x, y, R, G, B);
+        }
+    }
+
+    t += 0.04f;
+    dma_display->flipDMABuffer();
+}
+
+
+void QuantumPlasmaReactive2() {
+    static float t = 0.0f;
+    static float hueShift = 0.0f;
+
+   // dma_display->clearScreen();
+
+    // --- 1. Audio energy analysis ---
+    float bassEnergy = 0.0f;
+    float midEnergy = 0.0f;
+    float highEnergy = 0.0f;
+
+    int third = SAMPLES / 3;
+    for (int i = 0; i < third; i++) bassEnergy += fabs((float)samples[i] / 32768.0f);
+    for (int i = third; i < 2 * third; i++) midEnergy += fabs((float)samples[i] / 32768.0f);
+    for (int i = 2 * third; i < SAMPLES; i++) highEnergy += fabs((float)samples[i] / 32768.0f);
+
+    bassEnergy /= third;
+    midEnergy /= third;
+    highEnergy /= third;
+
+    static float smoothBass = 0, smoothMid = 0, smoothHigh = 0;
+    smoothBass = 0.8f * smoothBass + 0.2f * bassEnergy;
+    smoothMid = 0.85f * smoothMid + 0.15f * midEnergy;
+    smoothHigh = 0.9f * smoothHigh + 0.1f * highEnergy;
+
+    // --- 2. Global animation parameters ---
+    hueShift += 0.8f + smoothHigh * 25.0f;
+    float plasmaSpeed = 0.5f + smoothBass * 3.0f;
+    float intensity = 0.7f + (smoothBass + smoothMid) * 1.3f;
+
+    // --- 3. Multi-octave plasma field ---
+    for (int y = 0; y < HEIGHT; y++) {
+        float fy = (y - HEIGHT / 2) * 0.15f;
+        for (int x = 0; x < WIDTH; x++) {
+            float fx = (x - WIDTH / 2) * 0.15f;
+
+            // Multi-frequency plasma for more detail
+            float v = 0.0f;
+            v += sinf(fx * 3.1f + t * plasmaSpeed) * 1.0f;
+            v += sinf((fy + t * 0.7f) * 4.3f) * 0.8f;
+            v += sinf((fx + fy) * 2.5f - t * 1.3f) * 0.6f;
+            v += cosf(sqrtf(fx * fx + fy * fy) * 4.0f - t * plasmaSpeed * 1.2f) * 1.2f;
+            v += sinf(fx * 8.2f + t * 2.1f) * 0.3f;  // High frequency detail
+            v += cosf(fy * 7.3f - t * 1.7f) * 0.3f;  // High frequency detail
+
+            // Local audio reaction
+            int idx = ((x + y * WIDTH) % SAMPLES);
+            float localAmp = fabs((float)samples[idx]) / 32768.0f;
+            v += localAmp * 3.0f * smoothBass;
+
+            v *= intensity;
+
+            // Normalize field 0..1
+            float field = (v + 6.0f) / 12.0f;
+            field = constrain(field, 0.0f, 1.0f);
+
+            // --- 4. Sophisticated color gradients ---
+            float hue, sat, val;
+            
+            // Choose between different color palettes based on audio energy
+            float paletteSelector = fmodf(hueShift / 360.0f + smoothMid * 2.0f, 1.0f);
+            
+            if (paletteSelector < 0.25f) {
+                // Deep Ocean to Electric Cyan gradient
+                hue = 220.0f + field * 60.0f + smoothHigh * 40.0f;
+                sat = 0.9f - field * 0.3f + smoothBass * 0.4f;
+                val = 0.3f + field * 0.7f + smoothBass * 0.5f;
+            } else if (paletteSelector < 0.5f) {
+                // Magenta Dream to Gold Fire gradient
+                hue = 300.0f - field * 120.0f + smoothMid * 50.0f;
+                sat = 0.8f + field * 0.2f;
+                val = 0.4f + powf(field, 1.5f) * 0.6f + smoothBass * 0.3f;
+            } else if (paletteSelector < 0.75f) {
+                // Forest Green to Sunset Orange gradient
+                hue = 120.0f + field * 90.0f + smoothHigh * 30.0f;
+                sat = 0.7f + field * 0.3f;
+                val = 0.5f + field * 0.5f + smoothMid * 0.4f;
+            } else {
+                // Purple Rain to Pink Neon gradient
+                hue = 270.0f + field * 70.0f + smoothBass * 60.0f;
+                sat = 0.9f - field * 0.2f + smoothHigh * 0.3f;
+                val = 0.6f + field * 0.4f;
+            }
+
+            // Add overall hue cycling
+            hue = fmodf(hue + hueShift, 360.0f);
+            
+            // Enhance saturation with audio
+            sat = constrain(sat + smoothHigh * 0.4f, 0.3f, 1.0f);
+            val = constrain(val, 0.1f, 1.0f);
+
+            // HSV → RGB with gamma correction for better colors
+            float c = val * sat;
+            float h = fmodf(hue, 360.0f) / 60.0f;
+            float x_val = c * (1.0f - fabsf(fmodf(h, 2.0f) - 1.0f));
+            float m = val - c;
+
+            float r, g, b;
+            if (h < 1) { r = c; g = x_val; b = 0; }
+            else if (h < 2) { r = x_val; g = c; b = 0; }
+            else if (h < 3) { r = 0; g = c; b = x_val; }
+            else if (h < 4) { r = 0; g = x_val; b = c; }
+            else if (h < 5) { r = x_val; g = 0; b = c; }
+            else { r = c; g = 0; b = x_val; }
+
+            // Gamma correction for more vibrant colors
+            r = powf(r + m, 1.2f);
+            g = powf(g + m, 1.2f);
+            b = powf(b + m, 1.2f);
+
+            uint8_t R = (uint8_t)(constrain(r * 255, 0, 255));
+            uint8_t G = (uint8_t)(constrain(g * 255, 0, 255));
+            uint8_t B = (uint8_t)(constrain(b * 255, 0, 255));
+
+            dma_display->drawPixelRGB888(x, y, R, G, B);
+        }
+    }
+
+    t += 0.04f;
+    dma_display->flipDMABuffer();
+}
+
+
+
+
+// ============================================================================
+// FUNCTION 1: Inferno - Fire Simulation with Perlin Noise & Audio
+// ============================================================================
+void Inferno() {
+    static float fireTime = 0.0f;
+    static float smokeField[WIDTH][HEIGHT];
+    static float heatField[WIDTH][HEIGHT];
+    static unsigned long lastUpdate = 0;
+    
+    unsigned long now = millis();
+    float deltaTime = (now - lastUpdate) / 1000.0f;
+    lastUpdate = now;
+    
+    //dma_display->clearScreen();
+    float t = now * 0.001f;
+    
+    // Calculate audio energy distribution
+    float bassHeat = 0.0f, midFlame = 0.0f, highSpark = 0.0f;
+    int third = SAMPLES / 3;
+    
+    for (int i = 0; i < third; i++) {
+        bassHeat += fabs((float)samples[i] / 32768.0f);
+    }
+    for (int i = third; i < third * 2; i++) {
+        midFlame += fabs((float)samples[i] / 32768.0f);
+    }
+    for (int i = third * 2; i < SAMPLES; i++) {
+        highSpark += fabs((float)samples[i] / 32768.0f);
+    }
+    bassHeat /= third;
+    midFlame /= third;
+    highSpark /= third;
+    
+    // Update heat field with Perlin-like noise
+    for (int x = 0; x < WIDTH; x++) {
+        for (int y = 0; y < HEIGHT; y++) {
+            float nx = (float)x / WIDTH * 4.0f;
+            float ny = (float)y / HEIGHT * 4.0f;
+            
+            // Multi-octave noise for realistic fire texture
+            float noise = 0.0f;
+            float amplitude = 1.0f;
+            float frequency = 1.0f;
+            
+            for (int octave = 0; octave < 4; octave++) {
+                float sx = nx * frequency + fireTime * 0.5f;
+                float sy = ny * frequency - fireTime * 1.2f;
+                
+                noise += fastSin(sx * 3.14159f) * cos(sy * 3.14159f) * amplitude;
+                noise += fastSin(sx * 2.5f + sy * 1.7f) * amplitude * 0.5f;
+                
+                frequency *= 2.0f;
+                amplitude *= 0.5f;
+            }
+            
+            // Audio modulation - bass creates heat sources at bottom
+            float audioHeat = 0.0f;
+            if (y > HEIGHT - 12) {
+                int audioX = (int)((float)x / WIDTH * SAMPLES);
+                audioX = constrain(audioX, 0, SAMPLES - 1);
+                float localAmp = fabs((float)samples[audioX] / 32768.0f);
+                audioHeat = localAmp * 2.0f * (1.0f - (HEIGHT - y) / 12.0f);
+            }
+            
+            // Heat rises - use exponential falloff
+            float risingHeat = exp(-ny * 0.8f) * (1.0f + bassHeat * 2.0f);
+            
+            // Combine noise with heat propagation
+            heatField[x][y] = noise * 0.3f + risingHeat + audioHeat;
+            
+            // Add turbulence from mid frequencies
+            float turbulence = fastSin(nx * 8.0f + t * 3.0f) * fastCos(ny * 6.0f - t * 2.0f);
+            heatField[x][y] += turbulence * midFlame * 0.5f;
+            
+            // Clamp heat values
+            heatField[x][y] = constrain(heatField[x][y], 0.0f, 2.0f);
+        }
+    }
+    
+    // Smoke propagation using cellular automata
+    for (int x = 1; x < WIDTH - 1; x++) {
+        for (int y = 1; y < HEIGHT - 1; y++) {
+            // Smoke rises and diffuses
+            float diffusion = (
+                heatField[x-1][y] + heatField[x+1][y] + 
+                heatField[x][y-1] + heatField[x][y+1]
+            ) * 0.25f;
+            
+            smokeField[x][y] = (heatField[x][y] + diffusion) * 0.5f;
+            
+            // Smoke rises (shift upward)
+            if (y > 0) {
+                smokeField[x][y] = smokeField[x][y] * 0.7f + heatField[x][y+1] * 0.3f;
+            }
+        }
+    }
+    
+    // Render fire and smoke
+    for (int x = 0; x < WIDTH; x++) {
+        for (int y = 0; y < HEIGHT; y++) {
+            float heat = heatField[x][y];
+            float smoke = smokeField[x][y];
+            
+            // Fire color gradient based on heat
+            uint8_t r = 0, g = 0, b = 0;
+            
+            if (heat > 1.5f) {
+                // White hot core
+                r = 255;
+                g = 240 + 15 * highSpark;
+                b = 200 + 55 * highSpark;
+            } else if (heat > 1.0f) {
+                // Yellow-white flames
+                float t = (heat - 1.0f) * 2.0f;
+                r = 255;
+                g = 180 + 75 * t;
+                b = 50 + 150 * t * highSpark;
+            } else if (heat > 0.5f) {
+                // Orange flames
+                float t = (heat - 0.5f) * 2.0f;
+                r = 200 + 55 * t;
+                g = 80 + 100 * t * midFlame;
+                b = 10 + 40 * t;
+            } else if (heat > 0.2f) {
+                // Red embers
+                float t = (heat - 0.2f) * 3.33f;
+                r = 120 + 80 * t;
+                g = 20 + 60 * t;
+                b = 5;
+            } else {
+                // Dark smoke
+                float smokeIntensity = smoke * 60.0f;
+                r = smokeIntensity;
+                g = smokeIntensity * 0.9f;
+                b = smokeIntensity * 1.1f;
+            }
+            
+            // Add sparks on high frequencies
+            if (highSpark > 0.6f && random(0, 100) < 2) {
+                r = min(255, r + 100);
+                g = min(255, g + 80);
+                b = min(255, b + 60);
+            }
+            
+            dma_display->drawPixelRGB888(x, y, r, g, b);
+        }
+    }
+    
+    fireTime += deltaTime * (1.0f + bassHeat * 2.0f);
+    dma_display->flipDMABuffer();
 }
