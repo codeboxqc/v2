@@ -191,20 +191,22 @@ void drawVisualizer() {
         300, 300, 300, 300,      // 10–13: 5 minutes
         300, 300, 300,           // 14–16: 5 minutes
         60, 60, 60 ,              // 17–19: 1 minute
-         60, 60, 60 , 60, 60, 60 , 60, 60, 60 //20 28
+         60, 60, 60 , 60, 60, 60 , 60, 60, 60,00
+          
     };
     static const int numModes = sizeof(modeDurations) / sizeof(modeDurations[0]); // should be 20
 
     // Check if it's time to switch modes
     if (difftime(now, lastChange) >= secondsPassed) {
-        visualizerMode = (visualizerMode + 1) % numModes;
+        //visualizerMode = (visualizerMode + 1) % numModes;
+        visualizerMode = random(0, numModes);
         secondsPassed = modeDurations[visualizerMode];
         lastChange = now;
         //Serial.printf("[Visualizer] Switched to mode %d (duration %d sec)\n",       visualizerMode, secondsPassed);
     }
 
     // Uncomment this to test a specific mode manually:
-     // visualizerMode = 28;  // Force mode 19  
+    //  visualizerMode = 25;  // Force mode  
 
     // --- Draw visualizer based on mode ---
     switch (visualizerMode) {
@@ -239,10 +241,12 @@ void drawVisualizer() {
         case 22: QuantumPlasmaReactive(); break; 
         case 23: QuantumPlasmaReactive2(); break; 
         case 24: Inferno(); break; 
-        case 25: PyroVortex( ); break; 
-        case 26: PyroVortex( ); break; 
+         case 25:  gae_loop(); break;//loop   break; 
+         case 26:  gae_loop(); break;
         case 27: NeonRainDance(random(0, 2)); break; 
         case 28: Kaleidoscope(random(0, 10)) ;break; 
+
+        default:  gae_loop(); break;
     }
 }
 
@@ -310,7 +314,8 @@ void setup() {
   initFlame(&flame);
   defineShapes(); //called before initBodies
   initBodies();
-   
+ gae(); //ini
+ 
 //////////////////////////////////////////////
 
 

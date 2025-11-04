@@ -34,9 +34,38 @@ static ColorPalette colorPalettes[] = {
 static const int numPalettes = sizeof(colorPalettes) / sizeof(ColorPalette);
 
 
+WaveData calculateWaveData(int x, float time) {
+  WaveData data;
+  
+  float normalizedX = (float)x / PANEL_RES_X;
+  int sampleIndex = (int)(normalizedX * SAMPLES);
+  sampleIndex = constrain(sampleIndex, 0, SAMPLES - 1);
+  
+  data.amplitude = (float)samples[sampleIndex] / 32768.0f;
+  data.filteredAmplitude = max(amplitudeFilter.process(fabs(data.amplitude)), 0.05f);
+  
+  // Color calculation (simplified from reusable.cpp)
+  float colorIntensity = 0.5f + data.filteredAmplitude * 0.9f;
+  colorIntensity = min(colorIntensity, 1.0f);
+  
+  int colorIndex = (x + (int)(time * 20)) % 5;
+  uint16_t baseColor = 0xF800 + colorIndex * 0x0841;  // Example palette
+  
+  data.r = ((baseColor >> 11) & 0x1F) << 3;
+  data.g = ((baseColor >> 5) & 0x3F) << 2;
+  data.b = (baseColor & 0x1F) << 3;
+  
+  data.r = constrain(data.r * colorIntensity, 0, 255);
+  data.g = constrain(data.g * colorIntensity, 0, 255);
+  data.b = constrain(data.b * colorIntensity, 0, 255);
+  
+  data.y = (int)((1.0f - (0.5f + 0.3f * data.filteredAmplitude)) * PANEL_RES_Y);
+  
+  return data;
+}
 
 // Corrected calculateWaveData function using your existing ColorPalette
-WaveData calculateWaveData(int x, float time) {
+WaveData calculateWaveData2(int x, float time) {
     WaveData data;
 
 

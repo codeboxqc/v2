@@ -265,7 +265,7 @@ void drawBars() {
     }
   }
 
-  dma_display->drawRect(0, 0, PANEL_RES_X, PANEL_RES_Y, dma_display->color565(random(0,255), random(0,255), random(0,255)));
+ // dma_display->drawRect(0, 0, PANEL_RES_X, PANEL_RES_Y, dma_display->color565(random(0,255), random(0,255), random(0,255)));
   dma_display->flipDMABuffer();
 }
 

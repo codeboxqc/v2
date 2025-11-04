@@ -62,16 +62,19 @@ struct WaveData {
 };
 
 WaveData calculateWaveData(int x, float time);
+WaveData calculateWaveData2(int x, float time);
 
 
 // Audio filter class
 class AudioFilter {
 private:
     float value = 0;
-    float alpha = 0.1f;
+    float alpha = 0.0f;
+   
 public:
     float process(float input) {
         value = value * (1 - alpha) + input * alpha;
+       // value += (input - value) * 0.1f;  // Attack/decay
         return value;
     }
     void setSmoothness(float smoothness) { 
@@ -98,7 +101,7 @@ void drawFlameBarsFromBuffer(Flame* f) ;
 void drawCircularWaveform();
 void drawWaveform();
 void drawWaveform2();
-
+void drawCircularWaveform2();
 
 
 void initBodies();
@@ -138,3 +141,8 @@ void PyroVortex( );
 void PyroVortex2() ;
 void NeonRainDance(int charge);
 void Kaleidoscope(int trans);
+
+
+//Advanced Generative Portrait Art Engine test
+void gae(); //ini
+void gae_loop(); //loop
