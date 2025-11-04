@@ -185,12 +185,12 @@ void drawVisualizer() {
 
     // Duration in seconds for each visualizer mode (0–19)
     static const int modeDurations[] = {
-        60, 60, 60, 60, 60,      // 0–4: 1 minute
-        300, 300,                // 5–6: 5 minutes
-        60, 60, 60,              // 7–9: 1 minute
-        300, 300, 300, 300,      // 10–13: 5 minutes
-        300, 300, 300,           // 14–16: 5 minutes
-        60, 60, 60 ,              // 17–19: 1 minute
+        30, 30, 30, 30, 30,      // 0–4: 1 minute
+        60, 60,                // 5–6: 5 minutes
+        30, 30, 30,              // 7–9: 1 minute
+        60, 60, 30, 30,      // 10–13: 5 minutes
+        60, 60, 60,           // 14–16: 5 minutes
+        30, 30, 30 ,              // 17–19: 1 minute
          60, 60, 60 , 60, 60, 60 , 60, 60, 60,00
           
     };

@@ -12,8 +12,8 @@
 
 // Animation parameters
 static float t = 0.0f;
-static int currentCurve = 0;
-static int nextCurve = 1;
+static int currentCurve = random(0, 26) ;
+static int nextCurve = random(0, 26) ;
 static float transitionProgress = 0.0f;
 static unsigned long lastChangeTime = 0;
 static const float animationSpeed = 0.07f;
@@ -611,7 +611,7 @@ void updateSupercharged(int charge) {
         if (transitionProgress >= 1.0f) {
             transitionProgress = 0.0f;
             currentCurve = nextCurve;
-            nextCurve = (nextCurve + random(1, 8)) % 25;
+            nextCurve =  random(0, 26) ;
             lastChangeTime = currentTime;
         }
     }

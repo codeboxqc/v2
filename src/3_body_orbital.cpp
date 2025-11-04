@@ -963,7 +963,8 @@ void Kaleidoscope(int trans) {
     
     // Auto-cycle pattern every 10 seconds with smooth transition
     if (millis() - lastPatternChange > 10000) {
-        currentPattern = (currentPattern + 1) % 10;
+       // currentPattern = (currentPattern + 1) % 10;
+       currentPattern = random(0,10);
         lastPatternChange = millis();
         transitionProgress = 0.0f;
         prevHueOffset = hueOffset;
@@ -1065,6 +1066,8 @@ void Kaleidoscope(int trans) {
                     pattern += fastSin(dx * 5.0f + kaleido_time) * fastCos(dy * 4.0f - kaleido_time);
                     pattern += fastSin((dx + dy) * 6.0f + angle * symmetry);
                     break;
+
+                    default:currentPattern = 7; break;
             }
             
             // Add universal layers
